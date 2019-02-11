@@ -2,7 +2,7 @@
 import pandas as pd
 SRR_list = pd.read_csv(config['url_table'],sep='\t',index_col=0).iloc[:,0]
 
-outdir='.'
+outdir=   config['url_table'].replace("_urls.tab.txt",'.')
 
 rule all:
     input:

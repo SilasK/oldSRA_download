@@ -1,22 +1,48 @@
 
 import pandas as pd
-SRR_list = pd.read_csv(config['url_table'],sep='\t',index_col=0).iloc[:,0]
+SRR_list = pd.read_csv(config['url_table'],sep='\t',index_col=0).index
 
-outdir=   config['url_table'].replace("_urls.tab.txt",'.')
 
-rule all:
+if 'outdir' in config:
+    outdir = config['outdir']
+else:
+    outdir=   config['url_table'].replace("_info.tab.txt",'')
+
+
+
+rule paired:
     input:
         expand("{outdir}/{SRR}_{direction}.fastq.gz",SRR=SRR_list,outdir=outdir,direction=['R1','R2']),
-        expand("{outdir}/{SRR}.msh",SRR=SRR_list,outdir=outdir)
+        #expand("{outdir}/{SRR}.msh",SRR=SRR_list,outdir=outdir)
+
+rule single:
+    input:
+        expand("{outdir}/{SRR}.fastq.gz",SRR=SRR_list,outdir=outdir),
+
+rule download_SRR_single:
+    output:
+        "{outdir}/{SRR}.fastq.gz",
+    wildcard_constraints:
+        SRR="E[A-Z0-9]+"
+    params:
+        outdir=outdir
+    threads:
+        4
+    conda:
+        "envs/download.yaml"
+    shell:
+        "parallel-fastq-dump --sra-id {wildcards.SRR} --threads {threads} --gzip --outdir {params.outdir}"
 
 
 
-rule download_SRR:
+rule download_SRR_paired:
     output:
         "{outdir}/{SRR}_1.fastq.gz",
         "{outdir}/{SRR}_2.fastq.gz"
     params:
         outdir=outdir
+    wildcard_constraints:
+        SRR="E[A-Z0-9]+"
     threads:
         4
     conda:
